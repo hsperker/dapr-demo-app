@@ -7,7 +7,7 @@ A headless ChatGPT clone using Semantic Kernel agents with dynamic OpenAPI tool 
 This project provides a chat API powered by Semantic Kernel's ChatCompletionAgent. It supports:
 
 - **Session-based Chat**: Server-side session management - just provide a session ID
-- **Conversation Persistence**: SQLite-backed storage for chat history
+- **Conversation Persistence**: Pluggable storage backends (SQLite, Dapr state stores)
 - **Dynamic Tool Extension**: Register OpenAPI specs to extend agent capabilities
 - **Clean Architecture**: Hexagonal architecture for maintainability and testability
 
@@ -16,7 +16,7 @@ This project provides a chat API powered by Semantic Kernel's ChatCompletionAgen
 - **Semantic Kernel Agent** - Chat powered by OpenAI via Semantic Kernel
 - **Session Management** - Server-side conversation history
 - **OpenAPI Tool Registration** - Extend agent with external APIs
-- **SQLite Persistence** - Easy to swap for other databases
+- **Pluggable Persistence** - SQLite or Dapr state stores (Redis, CosmosDB, etc.)
 - **Swagger UI** - Built-in API documentation at `/docs`
 
 ## Getting Started
@@ -26,6 +26,7 @@ This project provides a chat API powered by Semantic Kernel's ChatCompletionAgen
 - Python 3.11+
 - [uv](https://github.com/astral-sh/uv)
 - OpenAI API key
+- [Dapr CLI](https://docs.dapr.io/getting-started/install-dapr-cli/) (optional, for Dapr state store)
 
 ### Setup
 
@@ -53,6 +54,22 @@ This project provides a chat API powered by Semantic Kernel's ChatCompletionAgen
 
 5. Open http://localhost:8000/docs for the Swagger UI
 
+### Running with Dapr
+
+To use Dapr for state management (enables Redis, CosmosDB, and other backends):
+
+1. Install and initialize Dapr:
+   ```bash
+   dapr init
+   ```
+
+2. Run with Dapr multi-app:
+   ```bash
+   dapr run -f dapr.yaml
+   ```
+
+The Dapr state store is configured in `resources/statestore.yaml`. By default it uses SQLite, but you can swap to Redis or other backends by changing the component configuration.
+
 ## API Endpoints
 
 ### Chat
@@ -78,15 +95,57 @@ app/
 │   ├── models/         # Domain models (Pydantic)
 │   └── services/       # Business logic & agent
 ├── infrastructure/
-│   └── repositories/   # Data persistence (SQLite)
+│   └── repositories/   # Data persistence
+│       ├── session_repository_sqlite.py  # SQLite backend
+│       └── session_repository_dapr.py    # Dapr state store backend
 ├── config.py           # Settings from .env
 └── main.py             # FastAPI application
+
+resources/
+└── statestore.yaml     # Dapr state store component
 
 tests/
 ├── core/               # Unit tests
 ├── infrastructure/     # Repository tests
 └── integration/        # API tests
 ```
+
+## Switching Persistence Backends
+
+The application uses a repository pattern, making it easy to swap storage backends.
+
+### Using SQLite (default for tests)
+
+```python
+from app.infrastructure.repositories import SessionRepositorySqLite
+
+session_repository = SessionRepositorySqLite(settings.database_path)
+```
+
+### Using Dapr State Store
+
+```python
+from app.infrastructure.repositories import SessionRepositoryDapr
+
+session_repository = SessionRepositoryDapr()
+```
+
+With Dapr, you can switch from SQLite to Redis by simply changing `resources/statestore.yaml`:
+
+```yaml
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: statestore
+spec:
+  type: state.redis
+  version: v1
+  metadata:
+    - name: redisHost
+      value: "localhost:6379"
+```
+
+No code changes required - just update the Dapr component configuration.
 
 ## Configuration
 
