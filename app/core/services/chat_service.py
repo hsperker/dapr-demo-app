@@ -2,7 +2,7 @@
 Chat service for handling conversations with an LLM agent.
 """
 
-from typing import List, Optional
+from typing import Optional, Sequence
 
 from app.core.models import Message, MessageRole
 from app.core.protocols import Agent, SessionRepositoryProtocol
@@ -40,7 +40,7 @@ class ChatService:
 
         return assistant_message
 
-    async def get_history(self, session_id: str) -> Optional[List[Message]]:
+    async def get_history(self, session_id: str) -> Optional[Sequence[Message]]:
         """Get conversation history for a session"""
         session = await self.session_repository.get(session_id)
         if session is None:

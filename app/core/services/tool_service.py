@@ -104,7 +104,8 @@ class ToolService:
         try:
             response = await self.http_client.get(tool.openapi_url)
             if response.status_code == 200:
-                return response.json()
+                result: Dict[str, Any] = response.json()
+                return result
             return None
         except Exception:
             return None

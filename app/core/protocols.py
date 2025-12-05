@@ -155,47 +155,27 @@ class HttpClient(Protocol):
 
     All methods return an HttpResponse object that provides
     status_code, json(), and text properties.
+
+    Note: Uses Any for url to be compatible with httpx.AsyncClient
+    which accepts both str and URL objects.
     """
 
-    async def get(
-        self,
-        url: str,
-        params: Optional[Dict[str, Any]] = None
-    ) -> HttpResponse:
+    async def get(self, url: Any, **kwargs: Any) -> Any:
         """Make a GET request"""
         ...
 
-    async def post(
-        self,
-        url: str,
-        params: Optional[Dict[str, Any]] = None,
-        json: Optional[Dict[str, Any]] = None
-    ) -> HttpResponse:
+    async def post(self, url: Any, **kwargs: Any) -> Any:
         """Make a POST request"""
         ...
 
-    async def put(
-        self,
-        url: str,
-        params: Optional[Dict[str, Any]] = None,
-        json: Optional[Dict[str, Any]] = None
-    ) -> HttpResponse:
+    async def put(self, url: Any, **kwargs: Any) -> Any:
         """Make a PUT request"""
         ...
 
-    async def patch(
-        self,
-        url: str,
-        params: Optional[Dict[str, Any]] = None,
-        json: Optional[Dict[str, Any]] = None
-    ) -> HttpResponse:
+    async def patch(self, url: Any, **kwargs: Any) -> Any:
         """Make a PATCH request"""
         ...
 
-    async def delete(
-        self,
-        url: str,
-        params: Optional[Dict[str, Any]] = None
-    ) -> HttpResponse:
+    async def delete(self, url: Any, **kwargs: Any) -> Any:
         """Make a DELETE request"""
         ...

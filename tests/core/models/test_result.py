@@ -22,7 +22,7 @@ class TestResult:
 
     def test_ok_without_value(self) -> None:
         """Test Result.ok() without a value"""
-        result = Result.ok()
+        result: Result[None] = Result.ok()
 
         assert result.success is True
         assert result.value is None
@@ -30,7 +30,7 @@ class TestResult:
 
     def test_error_creates_failed_result(self) -> None:
         """Test Result.error() creates a failed result"""
-        result = Result.error("Something went wrong")
+        result: Result[str] = Result.error("Something went wrong")
 
         assert result.success is False
         assert result.value is None
@@ -41,7 +41,7 @@ class TestResult:
         result = Result.ok("value")
 
         with pytest.raises(Exception):  # FrozenInstanceError
-            result.success = False
+            result.success = False  # type: ignore[misc]
 
 
 class TestPluginLoadResult:
@@ -66,7 +66,7 @@ class TestPluginLoadResult:
         result = PluginLoadResult.ok()
 
         with pytest.raises(Exception):  # FrozenInstanceError
-            result.success = False
+            result.success = False  # type: ignore[misc]
 
     def test_error_message_preserved(self) -> None:
         """Test that error messages are preserved through the chain"""
@@ -74,4 +74,5 @@ class TestPluginLoadResult:
         error_msg = "HTTP 404: Not Found"
         result = PluginLoadResult.error(error_msg)
 
+        assert result.error_message is not None
         assert error_msg in result.error_message

@@ -1,5 +1,7 @@
 import pytest
+from typing import Generator
 from unittest.mock import AsyncMock
+from fastapi import Request
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -15,10 +17,8 @@ def mock_chat_service() -> AsyncMock:
 
 
 @pytest.fixture
-def client(mock_chat_service: AsyncMock) -> TestClient:
+def client(mock_chat_service: AsyncMock) -> Generator[TestClient, None, None]:
     """Create a test client with mocked dependencies"""
-    from fastapi import Request
-
     def override_chat_service(request: Request) -> AsyncMock:
         return mock_chat_service
 

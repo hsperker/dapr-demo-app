@@ -5,7 +5,7 @@ Semantic Kernel Chat API - A headless ChatGPT clone.
 """
 
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
+from typing import AsyncGenerator, cast
 
 import httpx
 import uvicorn
@@ -15,6 +15,7 @@ from fastapi.responses import RedirectResponse
 from app.config import settings
 from app.api.routers import chat, tools
 from app.core.services import ChatService, ToolService, SemanticKernelAgent, AgentPluginManager
+from app.core.protocols import HttpClient
 from app.infrastructure.repositories import SessionRepository, ToolRepository
 
 
@@ -23,8 +24,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan handler for startup/shutdown"""
 
     # Initialize repositories
-    session_repository = SessionRepository(settings.database_url)
-    tool_repository = ToolRepository(settings.database_url)
+    session_repository = SessionRepository(settings.database_path)
+    tool_repository = ToolRepository(settings.database_path)
 
     await session_repository.initialize()
     await tool_repository.initialize()
@@ -40,9 +41,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     )
 
     # Initialize services
+    # Cast httpx client to HttpClient protocol (structurally compatible)
+    client = cast(HttpClient, http_client)
     chat_service = ChatService(session_repository, agent)
-    tool_service = ToolService(tool_repository, http_client)
-    plugin_manager = AgentPluginManager(agent, http_client)
+    tool_service = ToolService(tool_repository, client)
+    plugin_manager = AgentPluginManager(agent, client)
 
     # Store in app.state for dependency injection
     app.state.chat_service = chat_service

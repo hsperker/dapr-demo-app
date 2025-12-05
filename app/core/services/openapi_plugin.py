@@ -5,10 +5,12 @@ Creates Semantic Kernel plugins from OpenAPI specifications that can
 actually make HTTP calls to external APIs.
 """
 
-from typing import Any, Callable, Dict, List, Optional
-import httpx
+from typing import Any, Dict, Optional, TYPE_CHECKING
 
 from semantic_kernel.functions import kernel_function
+
+if TYPE_CHECKING:
+    from app.core.protocols import HttpClient
 
 
 class OpenApiPlugin:
@@ -23,7 +25,7 @@ class OpenApiPlugin:
         self,
         name: str,
         spec: Dict[str, Any],
-        http_client: Optional[httpx.AsyncClient] = None
+        http_client: Optional["HttpClient"] = None
     ):
         self.name = name
         self.spec = spec
@@ -36,7 +38,8 @@ class OpenApiPlugin:
         """Extract base URL from OpenAPI spec"""
         # OpenAPI 3.x
         if "servers" in spec and spec["servers"]:
-            return spec["servers"][0].get("url", "").rstrip("/")
+            url: str = spec["servers"][0].get("url", "")
+            return url.rstrip("/")
         # OpenAPI 2.x (Swagger)
         if "host" in spec:
             scheme = spec.get("schemes", ["https"])[0]
@@ -168,7 +171,7 @@ class OpenApiPlugin:
 def create_openapi_plugin(
     name: str,
     spec: Dict[str, Any],
-    http_client: Optional[httpx.AsyncClient] = None
+    http_client: Optional["HttpClient"] = None
 ) -> OpenApiPlugin:
     """
     Create a plugin from an OpenAPI specification.

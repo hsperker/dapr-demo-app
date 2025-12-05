@@ -87,6 +87,7 @@ class TestAgentPluginManager:
         result = await manager.load_plugin(tool)
 
         assert result.success is False
+        assert result.error_message is not None
         assert "404" in result.error_message
         mock_agent.add_plugin.assert_not_called()
 
@@ -108,6 +109,7 @@ class TestAgentPluginManager:
         result = await manager.load_plugin(tool)
 
         assert result.success is False
+        assert result.error_message is not None
         assert "invalid" in result.error_message.lower()
         mock_agent.add_plugin.assert_not_called()
 
@@ -125,6 +127,7 @@ class TestAgentPluginManager:
         result = await manager.load_plugin(tool)
 
         assert result.success is False
+        assert result.error_message is not None
         assert "Connection refused" in result.error_message
 
     def test_unload_plugin_removes_from_agent(
@@ -190,6 +193,7 @@ class TestAgentPluginManager:
         result = await manager.load_plugin(tool)
 
         assert result.success is False
+        assert result.error_message is not None
         assert "Invalid plugin name" in result.error_message
         assert "letters, numbers, and underscores" in result.error_message
         # Should fail before making HTTP request

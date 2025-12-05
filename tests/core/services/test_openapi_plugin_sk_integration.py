@@ -120,6 +120,7 @@ class TestOpenApiPluginSemanticKernelInvocation:
 
         # Verify the HTTP call was made and result returned
         mock_client.get.assert_called_once()
+        assert result is not None
         assert result.value == [{"id": 1, "name": "Fluffy"}]
 
     @pytest.mark.asyncio
@@ -157,4 +158,5 @@ class TestOpenApiPluginSemanticKernelInvocation:
         )
 
         mock_client.post.assert_called_once()
+        assert result is not None
         assert result.value["id"] == 42

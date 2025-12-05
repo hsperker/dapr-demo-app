@@ -119,11 +119,11 @@ class TestSemanticKernelAgent:
         # Verify get_response was called
         mock_sk_agent.get_response.assert_called_once()
 
-        # The ChatHistory should contain all messages
+        # The messages list should contain all messages
         call_args = mock_sk_agent.get_response.call_args
-        chat_history = call_args[0][0]
+        messages = call_args.kwargs.get("messages", [])
         # History should have: 2 from history + 1 new message = 3 messages
-        assert len(chat_history.messages) == 3
+        assert len(messages) == 3
 
 
 class TestAgentPluginIntegration:
@@ -156,10 +156,12 @@ class TestAgentPluginIntegration:
         agent.add_plugin(plugin, "test_plugin")
 
         # Verify plugin is in kernel
+        assert agent._kernel is not None
         assert "test_plugin" in agent._kernel.plugins
 
         # Remove it
         agent.remove_plugin("test_plugin")
 
         # Must be removed from KERNEL too, not just internal tracking
+        assert agent._kernel is not None
         assert "test_plugin" not in agent._kernel.plugins

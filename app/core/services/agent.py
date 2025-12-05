@@ -6,12 +6,12 @@ using Semantic Kernel's ChatCompletionAgent with OpenAI.
 """
 
 import os
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Sequence
 
 from semantic_kernel import Kernel
 from semantic_kernel.agents import ChatCompletionAgent
 from semantic_kernel.connectors.ai.open_ai import OpenAIChatCompletion
-from semantic_kernel.contents import ChatHistory
+from semantic_kernel.contents import ChatMessageContent, AuthorRole
 
 
 class SemanticKernelAgent:
@@ -68,25 +68,28 @@ class SemanticKernelAgent:
         self._ensure_initialized()
         assert self._agent is not None
 
-        # Build chat history from conversation
-        chat_history = ChatHistory()
+        # Build messages list from conversation history
+        messages_list: List[ChatMessageContent] = []
+
+        # Map role strings to AuthorRole enum
+        role_map = {
+            "user": AuthorRole.USER,
+            "assistant": AuthorRole.ASSISTANT,
+            "system": AuthorRole.SYSTEM,
+        }
 
         # Add previous messages
         for msg in history:
-            role = msg.get("role", "user")
+            role_str = msg.get("role", "user")
             content = msg.get("content", "")
-            if role == "user":
-                chat_history.add_user_message(content)
-            elif role == "assistant":
-                chat_history.add_assistant_message(content)
-            elif role == "system":
-                chat_history.add_system_message(content)
+            role = role_map.get(role_str, AuthorRole.USER)
+            messages_list.append(ChatMessageContent(role=role, content=content))
 
         # Add the new user message
-        chat_history.add_user_message(message)
+        messages_list.append(ChatMessageContent(role=AuthorRole.USER, content=message))
 
         # Get response from agent
-        response = await self._agent.get_response(chat_history)
+        response = await self._agent.get_response(messages=list(messages_list))
 
         # Extract content from response - normalize to string
         if hasattr(response, 'content'):

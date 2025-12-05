@@ -1,4 +1,5 @@
 import pytest
+from typing import Generator
 from unittest.mock import AsyncMock, MagicMock
 from fastapi import Request
 from fastapi.testclient import TestClient
@@ -25,7 +26,7 @@ def mock_plugin_manager() -> MagicMock:
 
 
 @pytest.fixture
-def client(mock_tool_service: AsyncMock, mock_plugin_manager: MagicMock) -> TestClient:
+def client(mock_tool_service: AsyncMock, mock_plugin_manager: MagicMock) -> Generator[TestClient, None, None]:
     """Create a test client with mocked dependencies"""
     def override_tool_service(request: Request) -> AsyncMock:
         return mock_tool_service
