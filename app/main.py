@@ -11,10 +11,19 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 
-from app.config import settings
 from app.api.routers import chat, tools
-from app.core.services import ChatService, ToolService, SemanticKernelAgent, AgentPluginManager
-from app.infrastructure.repositories import SessionRepository, ToolRepository
+from app.config import settings
+from app.core.services import (
+    AgentPluginManager,
+    ChatService,
+    SemanticKernelAgent,
+    ToolService,
+)
+from app.infrastructure.repositories import (
+    SessionRepository,
+    SessionRepositoryDapr,
+    ToolRepository,
+)
 
 
 @asynccontextmanager
@@ -22,7 +31,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan handler for startup/shutdown"""
 
     # Initialize repositories
-    session_repository = SessionRepository(settings.database_path)
+    # session_repository = SessionRepository(settings.database_path)
+    session_repository = SessionRepositoryDapr()
     tool_repository = ToolRepository(settings.database_path)
 
     await session_repository.initialize()
@@ -32,7 +42,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     agent = SemanticKernelAgent(
         api_key=settings.openai_api_key,
         model=settings.openai_model,
-        instructions=settings.agent_instructions
+        instructions=settings.agent_instructions,
     )
 
     # Initialize services
@@ -61,7 +71,7 @@ app = FastAPI(
     title="Semantic Kernel Chat API",
     description="A headless ChatGPT clone using Semantic Kernel agents with dynamic OpenAPI tool support",
     version="0.1.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # Register routers
@@ -72,7 +82,7 @@ app.include_router(tools.router)
 @app.get("/", include_in_schema=False)
 async def docs_redirect() -> RedirectResponse:
     """Redirect root to API docs"""
-    return RedirectResponse(url='/docs')
+    return RedirectResponse(url="/docs")
 
 
 @app.get("/health")

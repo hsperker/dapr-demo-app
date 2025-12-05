@@ -1,0 +1,7 @@
+version: 1
+common:
+  resourcesPath: resources/
+apps:
+  - appID: dapr-demo-app
+    appDirPath: ./app/
+    command: ["uv", "run", "fastapi", "dev"]
