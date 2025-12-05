@@ -2,7 +2,7 @@ import pytest
 from typing import AsyncGenerator
 
 from app.core.models import Message, MessageRole, Session
-from app.infrastructure.repositories.session_repository import SessionRepository
+from app.infrastructure.repositories import SessionRepository
 
 
 @pytest.fixture

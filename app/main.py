@@ -20,8 +20,8 @@ from app.core.services import (
     ToolService,
 )
 from app.infrastructure.repositories import (
-    SessionRepository,
     SessionRepositoryDapr,
+    SessionRepositorySqLite,
     ToolRepository,
 )
 
@@ -31,7 +31,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan handler for startup/shutdown"""
 
     # Initialize repositories
-    # session_repository = SessionRepository(settings.database_path)
+    # session_repository = SessionRepositorySqLite(settings.database_path)
     session_repository = SessionRepositoryDapr()
     tool_repository = ToolRepository(settings.database_path)
 
