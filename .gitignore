@@ -64,6 +64,8 @@ db.sqlite3-journal
 # SQLite databases
 *.db
 *.db-journal
+*.db-shm
+*.db-wal
 
 # Flask stuff:
 instance/

@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import List, Dict, Any, Tuple
+from typing import Tuple
 from uuid import uuid4
 
 from pydantic import BaseModel, Field, field_validator
@@ -41,13 +41,6 @@ class Session(BaseModel):
     messages: Tuple[Message, ...] = Field(default_factory=tuple)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
-
-    def get_history(self) -> List[Dict[str, Any]]:
-        """Get conversation history in format suitable for LLM"""
-        return [
-            {"role": msg.role.value, "content": msg.content}
-            for msg in self.messages
-        ]
 
     def with_message(self, message: Message) -> "Session":
         """

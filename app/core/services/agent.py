@@ -6,12 +6,14 @@ using Semantic Kernel's ChatCompletionAgent with OpenAI.
 """
 
 import os
-from typing import List, Dict, Any, Optional, Sequence
+from typing import Any, Dict, List, Optional, Union, cast
 
 from semantic_kernel import Kernel
 from semantic_kernel.agents import ChatCompletionAgent
 from semantic_kernel.connectors.ai.open_ai import OpenAIChatCompletion
-from semantic_kernel.contents import ChatMessageContent, AuthorRole
+from semantic_kernel.contents import AuthorRole, ChatMessageContent
+
+from app.core.models import MessageRole, Session
 
 
 class SemanticKernelAgent:
@@ -54,44 +56,45 @@ class SemanticKernelAgent:
                 instructions=self.instructions
             )
 
-    async def invoke(self, history: List[Dict[str, Any]], message: str) -> str:
+    async def invoke(self, session: Session, message: str) -> str:
         """
         Invoke the agent with conversation history and a new message.
 
         Args:
-            history: List of previous messages as dicts with 'role' and 'content'
+            session: The session containing conversation history
             message: The new user message
 
         Returns:
-            The agent's response as a string (always a string, never wrapped)
+            The agent's response as a string
         """
         self._ensure_initialized()
         assert self._agent is not None
 
-        # Build messages list from conversation history
-        messages_list: List[ChatMessageContent] = []
-
-        # Map role strings to AuthorRole enum
+        # Map MessageRole to SK's AuthorRole
         role_map = {
-            "user": AuthorRole.USER,
-            "assistant": AuthorRole.ASSISTANT,
-            "system": AuthorRole.SYSTEM,
+            MessageRole.USER: AuthorRole.USER,
+            MessageRole.ASSISTANT: AuthorRole.ASSISTANT,
+            MessageRole.SYSTEM: AuthorRole.SYSTEM,
         }
 
-        # Add previous messages
-        for msg in history:
-            role_str = msg.get("role", "user")
-            content = msg.get("content", "")
-            role = role_map.get(role_str, AuthorRole.USER)
-            messages_list.append(ChatMessageContent(role=role, content=content))
+        # Build messages list from session history
+        messages_list: List[ChatMessageContent] = [
+            ChatMessageContent(
+                role=role_map.get(msg.role, AuthorRole.USER),
+                content=msg.content
+            )
+            for msg in session.messages
+        ]
 
         # Add the new user message
         messages_list.append(ChatMessageContent(role=AuthorRole.USER, content=message))
 
         # Get response from agent
-        response = await self._agent.get_response(messages=list(messages_list))
+        response = await self._agent.get_response(
+            messages=cast(List[Union[str, ChatMessageContent]], messages_list)
+        )
 
-        # Extract content from response - normalize to string
+        # Extract content from response
         if hasattr(response, 'content'):
             return str(response.content)
         return str(response)

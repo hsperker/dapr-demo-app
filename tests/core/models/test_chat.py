@@ -100,19 +100,6 @@ class TestSession:
 
         assert new_session.updated_at >= original_updated
 
-    def test_get_conversation_history(self) -> None:
-        """Test getting conversation history in format for LLM"""
-        session = Session(id="test-session")
-        session = session.with_message(Message(role=MessageRole.USER, content="Hello"))
-        session = session.with_message(Message(role=MessageRole.ASSISTANT, content="Hi!"))
-
-        history = session.get_history()
-        assert len(history) == 2
-        assert history[0]["role"] == "user"
-        assert history[0]["content"] == "Hello"
-        assert history[1]["role"] == "assistant"
-        assert history[1]["content"] == "Hi!"
-
     def test_message_is_immutable(self) -> None:
         """Test that message cannot be mutated"""
         message = Message(role=MessageRole.USER, content="Hello")

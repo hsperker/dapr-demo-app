@@ -1,4 +1,3 @@
-import pprint
 from datetime import datetime
 from typing import Optional
 
@@ -8,7 +7,7 @@ from app.core.models import Message, Session
 
 
 class SessionRepositoryDapr:
-    """Repository for managing chat sessions with SQLite persistence"""
+    """Repository for managing chat sessions using Dapr state store"""
 
     DAPR_STORE_NAME = "statestore"
 
@@ -43,7 +42,6 @@ class SessionRepositoryDapr:
         with DaprClient() as client:
             result = client.get_state(self.DAPR_STORE_NAME, session_id)
             if result and result.data:
-                print("Result: " + str(result.data))
                 return Session.model_validate_json(result.data)
             return None
 

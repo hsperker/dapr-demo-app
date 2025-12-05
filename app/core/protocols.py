@@ -7,7 +7,7 @@ These protocols define the contracts between layers, enabling:
 3. Swappable implementations (e.g., different databases)
 """
 
-from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
+from typing import Any, List, Optional, Protocol, runtime_checkable
 
 from app.core.models import Message, Session, Tool, ToolStatus
 
@@ -20,12 +20,12 @@ from app.core.models import Message, Session, Tool, ToolStatus
 class Agent(Protocol):
     """Protocol for LLM agent implementations"""
 
-    async def invoke(self, history: List[Dict[str, Any]], message: str) -> str:
+    async def invoke(self, session: Session, message: str) -> str:
         """
         Invoke the agent with conversation history and a new message.
 
         Args:
-            history: List of previous messages as dicts with 'role' and 'content'
+            session: The session containing conversation history
             message: The new user message
 
         Returns:

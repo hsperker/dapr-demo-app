@@ -28,11 +28,8 @@ class ChatService:
         user_message = Message(role=MessageRole.USER, content=content)
         await self.session_repository.add_message(session_id, user_message)
 
-        # Get conversation history for context
-        history = session.get_history()
-
-        # Invoke the agent - protocol guarantees string return
-        response_text = await self.agent.invoke(history, content)
+        # Invoke the agent with the session
+        response_text = await self.agent.invoke(session, content)
 
         # Create and save assistant message
         assistant_message = Message(role=MessageRole.ASSISTANT, content=response_text)

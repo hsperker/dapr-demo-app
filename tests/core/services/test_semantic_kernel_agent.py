@@ -9,6 +9,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from semantic_kernel.functions import kernel_function
 
+from app.core.models import Message, MessageRole, Session
+
 
 class SimpleTestPlugin:
     """A simple plugin for testing that SK can discover"""
@@ -91,14 +93,17 @@ class TestSemanticKernelAgent:
         agent._agent = mock_sk_agent
         agent._kernel = MagicMock()
 
-        result = await agent.invoke([], "Hi")
+        # Create an empty session
+        session = Session(id="test-session")
+
+        result = await agent.invoke(session, "Hi")
 
         assert isinstance(result, str)
         assert result == "Hello, world!"
 
     @pytest.mark.asyncio
-    async def test_invoke_passes_history(self) -> None:
-        """Test that invoke passes conversation history to agent"""
+    async def test_invoke_passes_session_history(self) -> None:
+        """Test that invoke passes conversation history from session to agent"""
         from app.core.services.agent import SemanticKernelAgent
 
         agent = SemanticKernelAgent(api_key="test-key")
@@ -112,12 +117,12 @@ class TestSemanticKernelAgent:
         agent._agent = mock_sk_agent
         agent._kernel = MagicMock()
 
-        history = [
-            {"role": "user", "content": "Hello"},
-            {"role": "assistant", "content": "Hi there!"}
-        ]
+        # Create session with history
+        session = Session(id="test-session")
+        session = session.with_message(Message(role=MessageRole.USER, content="Hello"))
+        session = session.with_message(Message(role=MessageRole.ASSISTANT, content="Hi there!"))
 
-        await agent.invoke(history, "How are you?")
+        await agent.invoke(session, "How are you?")
 
         # Verify get_response was called
         mock_sk_agent.get_response.assert_called_once()
@@ -125,7 +130,7 @@ class TestSemanticKernelAgent:
         # The messages list should contain all messages
         call_args = mock_sk_agent.get_response.call_args
         messages = call_args.kwargs.get("messages", [])
-        # History should have: 2 from history + 1 new message = 3 messages
+        # History should have: 2 from session + 1 new message = 3 messages
         assert len(messages) == 3
 
 
