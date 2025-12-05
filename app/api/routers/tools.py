@@ -78,7 +78,7 @@ async def activate_tool(
         )
 
     # Load plugin into agent
-    result = await plugin_manager.load_plugin(tool)
+    result = plugin_manager.load_plugin(tool)
 
     if not result.success:
         await tool_service.update_status(tool_id, ToolStatus.ERROR, result.error_message)

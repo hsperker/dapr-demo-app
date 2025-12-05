@@ -5,10 +5,10 @@ This service handles persistence of tool metadata only.
 For loading tools into the agent, use AgentPluginManager.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from app.core.models import Tool, ToolStatus
-from app.core.protocols import HttpClient, ToolRepositoryProtocol
+from app.core.protocols import ToolRepositoryProtocol
 from app.core.validation import validate_plugin_name, InvalidPluginNameError
 
 
@@ -24,13 +24,8 @@ class ToolService:
     Use AgentPluginManager to load/unload plugins into the agent.
     """
 
-    def __init__(
-        self,
-        tool_repository: ToolRepositoryProtocol,
-        http_client: HttpClient,
-    ):
+    def __init__(self, tool_repository: ToolRepositoryProtocol):
         self.tool_repository = tool_repository
-        self.http_client = http_client
 
     async def register_tool(
         self,
@@ -94,18 +89,3 @@ class ToolService:
             return False
         await self.tool_repository.update_status(tool_id, status, error_message)
         return True
-
-    async def get_openapi_spec(self, tool_id: str) -> Optional[Dict[str, Any]]:
-        """Fetch the OpenAPI spec for a tool"""
-        tool = await self.tool_repository.get(tool_id)
-        if tool is None:
-            return None
-
-        try:
-            response = await self.http_client.get(tool.openapi_url)
-            if response.status_code == 200:
-                result: Dict[str, Any] = response.json()
-                return result
-            return None
-        except Exception:
-            return None

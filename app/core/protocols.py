@@ -37,6 +37,20 @@ class Agent(Protocol):
         """Add a plugin to extend agent capabilities"""
         ...
 
+    def add_plugin_from_openapi(
+        self,
+        plugin_name: str,
+        openapi_url: str
+    ) -> None:
+        """
+        Add a plugin from an OpenAPI specification URL.
+
+        Args:
+            plugin_name: Name for the plugin
+            openapi_url: URL to the OpenAPI specification
+        """
+        ...
+
     def remove_plugin(self, plugin_name: str) -> None:
         """Remove a plugin from the agent"""
         ...
@@ -122,60 +136,4 @@ class ToolRepositoryProtocol(Protocol):
 
     async def delete(self, tool_id: str) -> bool:
         """Delete a tool"""
-        ...
-
-
-# =============================================================================
-# HTTP Client Protocol
-# =============================================================================
-
-@runtime_checkable
-class HttpResponse(Protocol):
-    """Protocol for HTTP response objects"""
-
-    @property
-    def status_code(self) -> int:
-        """HTTP status code"""
-        ...
-
-    def json(self) -> Any:
-        """Parse response body as JSON"""
-        ...
-
-    @property
-    def text(self) -> str:
-        """Response body as text"""
-        ...
-
-
-@runtime_checkable
-class HttpClient(Protocol):
-    """
-    Protocol for HTTP client implementations.
-
-    All methods return an HttpResponse object that provides
-    status_code, json(), and text properties.
-
-    Note: Uses Any for url to be compatible with httpx.AsyncClient
-    which accepts both str and URL objects.
-    """
-
-    async def get(self, url: Any, **kwargs: Any) -> Any:
-        """Make a GET request"""
-        ...
-
-    async def post(self, url: Any, **kwargs: Any) -> Any:
-        """Make a POST request"""
-        ...
-
-    async def put(self, url: Any, **kwargs: Any) -> Any:
-        """Make a PUT request"""
-        ...
-
-    async def patch(self, url: Any, **kwargs: Any) -> Any:
-        """Make a PATCH request"""
-        ...
-
-    async def delete(self, url: Any, **kwargs: Any) -> Any:
-        """Make a DELETE request"""
         ...

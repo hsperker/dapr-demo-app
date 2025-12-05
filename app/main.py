@@ -5,9 +5,8 @@ Semantic Kernel Chat API - A headless ChatGPT clone.
 """
 
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, cast
+from typing import AsyncGenerator
 
-import httpx
 import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
@@ -15,7 +14,6 @@ from fastapi.responses import RedirectResponse
 from app.config import settings
 from app.api.routers import chat, tools
 from app.core.services import ChatService, ToolService, SemanticKernelAgent, AgentPluginManager
-from app.core.protocols import HttpClient
 from app.infrastructure.repositories import SessionRepository, ToolRepository
 
 
@@ -30,9 +28,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await session_repository.initialize()
     await tool_repository.initialize()
 
-    # Initialize HTTP client
-    http_client = httpx.AsyncClient()
-
     # Initialize agent
     agent = SemanticKernelAgent(
         api_key=settings.openai_api_key,
@@ -41,11 +36,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     )
 
     # Initialize services
-    # Cast httpx client to HttpClient protocol (structurally compatible)
-    client = cast(HttpClient, http_client)
     chat_service = ChatService(session_repository, agent)
-    tool_service = ToolService(tool_repository, client)
-    plugin_manager = AgentPluginManager(agent, client)
+    tool_service = ToolService(tool_repository)
+    plugin_manager = AgentPluginManager(agent)
 
     # Store in app.state for dependency injection
     app.state.chat_service = chat_service
@@ -56,14 +49,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Keep references for cleanup
     app.state.session_repository = session_repository
     app.state.tool_repository = tool_repository
-    app.state.http_client = http_client
 
     yield
 
     # Cleanup
     await app.state.session_repository.close()
     await app.state.tool_repository.close()
-    await app.state.http_client.aclose()
 
 
 app = FastAPI(

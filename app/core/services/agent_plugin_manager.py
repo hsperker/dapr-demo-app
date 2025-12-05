@@ -7,8 +7,7 @@ This separates the concern of managing agent plugins from CRUD operations on too
 from typing import List
 
 from app.core.models import Tool, PluginLoadResult
-from app.core.protocols import Agent, HttpClient
-from app.core.services.openapi_plugin import create_openapi_plugin
+from app.core.protocols import Agent
 from app.core.validation import validate_plugin_name
 
 
@@ -18,17 +17,19 @@ class AgentPluginManager:
 
     This is responsible only for the agent integration, not for
     persisting tool metadata (that's ToolService's job).
+
+    Uses Semantic Kernel's built-in OpenAPI support for plugin creation.
     """
 
-    def __init__(self, agent: Agent, http_client: HttpClient):
+    def __init__(self, agent: Agent):
         self._agent = agent
-        self._http_client = http_client
 
-    async def load_plugin(self, tool: Tool) -> PluginLoadResult:
+    def load_plugin(self, tool: Tool) -> PluginLoadResult:
         """
         Load an OpenAPI plugin into the agent.
 
-        Fetches the OpenAPI spec and registers it as a plugin with the agent.
+        Uses SK's add_plugin_from_openapi which handles fetching the spec,
+        parsing operations, and creating callable functions.
 
         Args:
             tool: The tool containing the OpenAPI URL
@@ -36,30 +37,16 @@ class AgentPluginManager:
         Returns:
             PluginLoadResult indicating success or failure
         """
-        # Validate plugin name before attempting to load
         if not validate_plugin_name(tool.name):
             return PluginLoadResult.error(
                 f"Invalid plugin name '{tool.name}': must contain only letters, numbers, and underscores"
             )
 
         try:
-            response = await self._http_client.get(tool.openapi_url)
-
-            if response.status_code != 200:
-                return PluginLoadResult.error(
-                    f"Failed to fetch OpenAPI spec: HTTP {response.status_code}"
-                )
-
-            spec = response.json()
-
-            if not isinstance(spec, dict):
-                return PluginLoadResult.error(
-                    "Invalid OpenAPI spec: expected a JSON object"
-                )
-
-            plugin = create_openapi_plugin(tool.name, spec, self._http_client)
-            self._agent.add_plugin(plugin, plugin_name=tool.name)
-
+            self._agent.add_plugin_from_openapi(
+                plugin_name=tool.name,
+                openapi_url=tool.openapi_url
+            )
             return PluginLoadResult.ok()
 
         except Exception as e:
@@ -83,7 +70,7 @@ class AgentPluginManager:
         """
         return self._agent.get_plugins()
 
-    async def reload_plugin(self, tool: Tool) -> PluginLoadResult:
+    def reload_plugin(self, tool: Tool) -> PluginLoadResult:
         """
         Reload a plugin by unloading then loading it again.
 
@@ -96,4 +83,4 @@ class AgentPluginManager:
             PluginLoadResult indicating success or failure
         """
         self.unload_plugin(tool.name)
-        return await self.load_plugin(tool)
+        return self.load_plugin(tool)

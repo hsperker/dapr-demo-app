@@ -20,7 +20,7 @@ def mock_tool_service() -> AsyncMock:
 def mock_plugin_manager() -> MagicMock:
     """Create a mock plugin manager"""
     manager = MagicMock()
-    manager.load_plugin = AsyncMock()
+    manager.load_plugin = MagicMock()
     manager.unload_plugin = MagicMock()
     return manager
 

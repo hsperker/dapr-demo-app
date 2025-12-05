@@ -103,6 +103,33 @@ class SemanticKernelAgent:
         self._kernel.add_plugin(plugin, plugin_name)
         self._plugins[plugin_name] = plugin
 
+    def add_plugin_from_openapi(
+        self,
+        plugin_name: str,
+        openapi_url: str
+    ) -> None:
+        """
+        Add a plugin from an OpenAPI specification URL.
+
+        Uses Semantic Kernel's built-in OpenAPI support which handles:
+        - Fetching and parsing the OpenAPI spec
+        - Creating callable functions for each operation
+        - Parameter mapping and payload construction
+        - HTTP request execution
+
+        Args:
+            plugin_name: Name for the plugin
+            openapi_url: URL to the OpenAPI specification
+        """
+        self._ensure_initialized()
+        assert self._kernel is not None
+
+        self._kernel.add_plugin_from_openapi(
+            plugin_name=plugin_name,
+            openapi_document_path=openapi_url
+        )
+        self._plugins[plugin_name] = True  # Track that plugin is loaded
+
     def remove_plugin(self, plugin_name: str) -> None:
         """Remove a plugin from the agent"""
         if plugin_name in self._plugins:

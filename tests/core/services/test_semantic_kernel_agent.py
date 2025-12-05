@@ -7,6 +7,16 @@ These tests verify the agent wrapper works correctly with mocked Semantic Kernel
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from semantic_kernel.functions import kernel_function
+
+
+class SimpleTestPlugin:
+    """A simple plugin for testing that SK can discover"""
+
+    @kernel_function(name="hello", description="Say hello")
+    def hello(self) -> str:
+        return "Hello!"
+
 
 class TestSemanticKernelAgent:
     """Tests for the SemanticKernelAgent wrapper"""
@@ -38,13 +48,9 @@ class TestSemanticKernelAgent:
     def test_add_plugin_tracks_plugin(self) -> None:
         """Test that add_plugin registers the plugin in internal tracking"""
         from app.core.services.agent import SemanticKernelAgent
-        from app.core.services.openapi_plugin import OpenApiPlugin
 
         agent = SemanticKernelAgent(api_key="test-key")
-
-        # Use a real OpenApiPlugin since SK validates plugin structure
-        spec = {"openapi": "3.0.0", "info": {"title": "Test", "version": "1.0"}, "paths": {}}
-        plugin = OpenApiPlugin("test_plugin", spec)
+        plugin = SimpleTestPlugin()
         agent.add_plugin(plugin, "test_plugin")
 
         assert "test_plugin" in agent.get_plugins()
@@ -52,12 +58,9 @@ class TestSemanticKernelAgent:
     def test_remove_plugin_untracks_plugin(self) -> None:
         """Test that remove_plugin removes from tracking"""
         from app.core.services.agent import SemanticKernelAgent
-        from app.core.services.openapi_plugin import OpenApiPlugin
 
         agent = SemanticKernelAgent(api_key="test-key")
-
-        spec = {"openapi": "3.0.0", "info": {"title": "Test", "version": "1.0"}, "paths": {}}
-        plugin = OpenApiPlugin("test_plugin", spec)
+        plugin = SimpleTestPlugin()
         agent.add_plugin(plugin, "test_plugin")
         assert "test_plugin" in agent.get_plugins()
 
@@ -132,12 +135,9 @@ class TestAgentPluginIntegration:
     def test_plugin_added_to_kernel_plugins(self) -> None:
         """Test that plugins are actually added to the kernel's plugin registry"""
         from app.core.services.agent import SemanticKernelAgent
-        from app.core.services.openapi_plugin import OpenApiPlugin
 
         agent = SemanticKernelAgent(api_key="test-key")
-
-        spec = {"openapi": "3.0.0", "info": {"title": "Test", "version": "1.0"}, "paths": {}}
-        plugin = OpenApiPlugin("test_plugin", spec)
+        plugin = SimpleTestPlugin()
         agent.add_plugin(plugin, "test_plugin")
 
         # Verify the kernel actually has the plugin
@@ -147,12 +147,9 @@ class TestAgentPluginIntegration:
     def test_plugin_removed_from_kernel_plugins(self) -> None:
         """Test that remove_plugin actually removes from the kernel, not just tracking"""
         from app.core.services.agent import SemanticKernelAgent
-        from app.core.services.openapi_plugin import OpenApiPlugin
 
         agent = SemanticKernelAgent(api_key="test-key")
-
-        spec = {"openapi": "3.0.0", "info": {"title": "Test", "version": "1.0"}, "paths": {}}
-        plugin = OpenApiPlugin("test_plugin", spec)
+        plugin = SimpleTestPlugin()
         agent.add_plugin(plugin, "test_plugin")
 
         # Verify plugin is in kernel
@@ -165,3 +162,16 @@ class TestAgentPluginIntegration:
         # Must be removed from KERNEL too, not just internal tracking
         assert agent._kernel is not None
         assert "test_plugin" not in agent._kernel.plugins
+
+    def test_plugin_functions_discoverable(self) -> None:
+        """Test that plugin functions are discoverable by the kernel"""
+        from app.core.services.agent import SemanticKernelAgent
+
+        agent = SemanticKernelAgent(api_key="test-key")
+        plugin = SimpleTestPlugin()
+        agent.add_plugin(plugin, "test_plugin")
+
+        # Verify the kernel can see the function
+        assert agent._kernel is not None
+        plugin_funcs = agent._kernel.plugins["test_plugin"].functions
+        assert "hello" in plugin_funcs
