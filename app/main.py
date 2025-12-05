@@ -1,27 +1,91 @@
+"""
+FastAPI application entry point.
+
+Semantic Kernel Chat API - A headless ChatGPT clone.
+"""
+
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
+
+import httpx
 import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
-from fastapi.exceptions import RequestValidationError
 
-from app.api.routers import system, items
-from app.api.middleware import validation_exception_handler
+from app.config import settings
+from app.api.routers import chat, tools
+from app.core.services import ChatService, ToolService, SemanticKernelAgent, AgentPluginManager
+from app.infrastructure.repositories import SessionRepository, ToolRepository
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Application lifespan handler for startup/shutdown"""
+
+    # Initialize repositories
+    session_repository = SessionRepository(settings.database_url)
+    tool_repository = ToolRepository(settings.database_url)
+
+    await session_repository.initialize()
+    await tool_repository.initialize()
+
+    # Initialize HTTP client
+    http_client = httpx.AsyncClient()
+
+    # Initialize agent
+    agent = SemanticKernelAgent(
+        api_key=settings.openai_api_key,
+        model=settings.openai_model,
+        instructions=settings.agent_instructions
+    )
+
+    # Initialize services
+    chat_service = ChatService(session_repository, agent)
+    tool_service = ToolService(tool_repository, http_client)
+    plugin_manager = AgentPluginManager(agent, http_client)
+
+    # Store in app.state for dependency injection
+    app.state.chat_service = chat_service
+    app.state.tool_service = tool_service
+    app.state.plugin_manager = plugin_manager
+    app.state.agent = agent
+
+    # Keep references for cleanup
+    app.state.session_repository = session_repository
+    app.state.tool_repository = tool_repository
+    app.state.http_client = http_client
+
+    yield
+
+    # Cleanup
+    await app.state.session_repository.close()
+    await app.state.tool_repository.close()
+    await app.state.http_client.aclose()
+
 
 app = FastAPI(
-    title="FastAPI Hexagonal Architecture",
-    description="A sample API built with FastAPI following hexagonal architecture",
-    version="0.1.0"
+    title="Semantic Kernel Chat API",
+    description="A headless ChatGPT clone using Semantic Kernel agents with dynamic OpenAPI tool support",
+    version="0.1.0",
+    lifespan=lifespan
 )
 
-# Register exception handlers
-app.add_exception_handler(RequestValidationError, validation_exception_handler)  # type: ignore[arg-type]
-
 # Register routers
-app.include_router(system.router)
-app.include_router(items.router)
+app.include_router(chat.router)
+app.include_router(tools.router)
+
 
 @app.get("/", include_in_schema=False)
 async def docs_redirect() -> RedirectResponse:
+    """Redirect root to API docs"""
     return RedirectResponse(url='/docs')
+
+
+@app.get("/health")
+async def health_check() -> dict:
+    """Health check endpoint"""
+    return {"status": "healthy"}
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

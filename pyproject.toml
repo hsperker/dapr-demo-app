@@ -1,17 +1,31 @@
 [project]
-name = "fastapi-container-app-starter"
+name = "semantic-kernel-chat"
 version = "0.1.0"
-description = "A base template for FastAPI applications with Docker to run in Azure Container Apps."
+description = "A headless ChatGPT clone using Semantic Kernel agents with dynamic OpenAPI tool support."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi[standard]>=0.115.12",
     "pydantic>=2.11.1",
+    "pydantic-settings>=2.0.0",
     "uvicorn>=0.34.0",
+    "semantic-kernel>=1.15.0",
+    "python-dotenv>=1.0.0",
+    "aiosqlite>=0.20.0",
+    "httpx>=0.27.0",
 ]
 
 [dependency-groups]
 dev = [
     "mypy>=1.15.0",
     "pytest>=8.3.5",
+    "pytest-asyncio>=0.24.0",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+markers = [
+    "integration: marks tests as integration tests requiring external services (OpenAI)",
 ]
